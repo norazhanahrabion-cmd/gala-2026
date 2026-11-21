@@ -45,6 +45,7 @@ h1{margin:6px 0 0;font-family:'Bebas Neue';font-weight:400;font-size:clamp(54px,
 .card p{margin:0 0 14px;color:#e4d9bd;font-size:14px;line-height:1.5}
 input[type=text],input[type=password],textarea{width:100%;background:rgba(0,0,0,.45);border:1px solid rgba(255,255,255,.2);color:#fff;border-radius:14px;padding:15px 16px;font:inherit;font-size:17px;outline:none;transition:.2s}
 input:focus,textarea:focus{border-color:var(--cyan);box-shadow:0 0 0 3px rgba(246,196,83,.25)}
+input.pw{-webkit-text-security:disc;text-security:disc}
 textarea{min-height:130px;font-size:14px;resize:vertical}
 .code{letter-spacing:.18em;text-align:center;text-transform:uppercase;font-family:'Bebas Neue';font-size:26px!important}
 .btn{display:block;width:100%;margin-top:12px;border:0;border-radius:14px;padding:15px;font:inherit;font-weight:700;font-size:16px;letter-spacing:.06em;cursor:pointer;color:#1a0b00;background:linear-gradient(135deg,var(--gold2),var(--gold) 50%,#e08a00);box-shadow:0 8px 30px rgba(246,196,83,.35);transition:transform .15s}
@@ -152,7 +153,7 @@ canvas#fx{z-index:70}
     <h2>MASUK DEWAN DULU 🚪</h2>
     <p>Tanda hadir hanya dibuka bila anda sudah berada di dalam <b>The Chamber Ballroom</b>. Masukkan <b>Kod Dewan</b> yang dipaparkan di skrin dalam dewan.</p>
     <div class="warn"><span class="i">🔒</span><span><b>Jangan kongsi kod ini</b> dengan jemputan yang belum sampai. Setiap orang mesti tanda hadir sendiri <b>di dalam dewan</b>.</span></div>
-    <input id="codeIn" class="code" type="text" maxlength="20" placeholder="••••••" autocomplete="off" autocapitalize="characters" style="margin-top:12px">
+    <input id="codeIn" class="code" type="text" maxlength="20" placeholder="••••••" name="x-kod-dewan" autocomplete="off" autocorrect="off" autocapitalize="characters" spellcheck="false" data-lpignore="true" data-1p-ignore data-form-type="other" style="margin-top:12px">
     <div class="err" id="codeErr"></div>
     <button class="btn" id="codeBtn">BUKA TANDA HADIR</button>
   </section>
@@ -161,7 +162,7 @@ canvas#fx{z-index:70}
   <section class="card hide" id="pick">
     <h2>CARI NAMA ANDA ✨</h2>
     <p>Taip sebahagian nama, kemudian tekan nama anda untuk tanda hadir.</p>
-    <input id="q" type="text" placeholder="Cari nama…" autocomplete="off">
+    <input id="q" type="text" name="x-cari" placeholder="Cari nama…" autocomplete="off" autocorrect="off" spellcheck="false" data-lpignore="true" data-1p-ignore data-form-type="other">
     <div class="list" id="list"></div>
   </section>
 
@@ -200,7 +201,7 @@ canvas#fx{z-index:70}
 <div id="screen">
   <div id="sGate" class="card hide">
     <h2>PAPARAN DEWAN 📺</h2><p>Masukkan kod AJK untuk membuka paparan skrin hadapan dewan.</p>
-    <input id="sGateIn" type="password" placeholder="Kod AJK"><div class="err" id="sGateErr"></div>
+    <input id="sGateIn" type="text" class="pw" name="x-ajk2" placeholder="Kod AJK" autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false" data-lpignore="true" data-1p-ignore data-form-type="other"><div class="err" id="sGateErr"></div>
     <button class="btn" id="sGateGo">BUKA PAPARAN</button>
   </div>
   <div id="sLive" class="hide" style="display:flex;flex-direction:column;flex:1;min-height:0">
@@ -230,7 +231,7 @@ canvas#fx{z-index:70}
 <div class="modal hide" id="admin"><div class="card" style="max-height:92vh;overflow:auto;text-align:left">
   <div id="admLogin">
     <h2>ZON AJK 🔐</h2><p>Masukkan kod AJK.</p>
-    <input id="admIn" type="password" placeholder="Kod AJK">
+    <input id="admIn" type="text" class="pw" name="x-ajk" placeholder="Kod AJK" autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false" data-lpignore="true" data-1p-ignore data-form-type="other">
     <div class="err" id="admErr"></div>
     <button class="btn" id="admGo">MASUK</button>
     <button class="btn ghost" data-close="admin">TUTUP</button>
