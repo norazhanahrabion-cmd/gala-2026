@@ -253,6 +253,7 @@ canvas#fx{z-index:70}
     <p>Tambah nama baharu — satu nama setiap baris. Jawatan (pilihan) dalam kurungan, cth: <i>En. Ali bin Abu (Guru Bahasa)</i></p>
     <textarea id="addTxt" placeholder="Pn. Nama Penuh (Jawatan)&#10;En. Nama Lain"></textarea>
     <div class="grid2"><button class="btn" id="addBtn">TAMBAH NAMA</button><button class="btn ghost" id="csvBtn" style="margin-top:12px">SALIN CSV</button></div>
+    <button class="btn ghost" id="openScr">📺 BUKA PAPARAN DEWAN</button>
     <div class="err" id="addMsg" style="color:var(--ok)"></div>
     <button class="btn ghost hide" id="seedBtn">MUAT SENARAI ASAL KE PANGKALAN DATA</button>
     <div id="admList" style="margin-top:12px"></div>
@@ -403,6 +404,7 @@ $('addBtn').onclick=async()=>{
   $('addTxt').value='';$('addMsg').textContent=rows.length+' nama ditambah'+(skip?(' • '+skip+' duplikasi dilangkau'):'');
   refresh();
 };
+$('openScr').onclick=()=>{screenAuth=true;try{sessionStorage.setItem('gala26_scr','1')}catch(e){}$('admin').classList.add('hide');location.hash='#paparan';route()};
 $('seedBtn').onclick=async()=>{await api.add(SEED.map(s=>{const[n,r]=s.split('|');return{nama:n,jawatan:r||''}}));refresh()};
 $('csvBtn').onclick=async()=>{
   const csv='Bil,Nama,Jawatan,Status,Masa\n'+DATA.map((x,i)=>[i+1,x.nama,x.jawatan,x.hadir_at?'HADIR':'BELUM',x.hadir_at?fmtT(x.hadir_at):''].map(v=>'"'+String(v).replace(/"/g,'""')+'"').join(',')).join('\n');
@@ -536,7 +538,7 @@ function onScreenData(){
   pump();
 }
 function route(){
-  const on=location.hash==='#paparan';
+  const on=location.hash==='#paparan'||/[?&]paparan(=|&|$)/.test(location.search);
   document.body.classList.toggle('screenmode',on);
   if(!on)return;
   $('sCodeTxt').textContent=CONFIG.VENUE_CODE;
