@@ -192,7 +192,7 @@ canvas#fx{z-index:70}
     </div>
     <p style="margin-top:14px">Terima kasih kerana hadir. Selamat menikmati malam ini! 🥂</p>
     <div class="warn big"><span class="i">🚨</span><span><b>PERINGATAN:</b> Anda sudah tiba — <b>JANGAN kongsi Kod Dewan</b> dengan rakan yang belum sampai. Mereka mesti masuk dewan dan tanda hadir sendiri.</span></div>
-    <div class="warn"><span class="i">🔐</span><span>Peranti ini <b>sudah digunakan</b> untuk tanda hadir dan dikunci. Setiap orang hanya boleh tanda hadir <b>sekali</b>. Jika tersilap nama, minta AJK untuk reset.</span></div>
+    <button class="btn ghost" id="again">TANDA HADIR ORANG LAIN</button>
   </section>
 
   <!-- Statistik -->
@@ -340,11 +340,6 @@ function showPass(p){
   $('pass').classList.remove('hide');
 }
 function render(){
-  if(meId&&loaded){ // peranti terkunci selepas tanda hadir; dibuka semula jika AJK reset nama itu
-    const me=DATA.find(x=>x.id===meId);
-    if(me&&me.hadir_at)showPass(me);
-    else{clearMe();$('pass').classList.add('hide')}
-  }
   $('gate').classList.toggle('hide',unlocked||!$('pass').classList.contains('hide'));
   $('pick').classList.toggle('hide',!unlocked||!$('pass').classList.contains('hide'));
   const q=$('q').value.trim().toLowerCase(), box=$('list'); box.innerHTML='';
@@ -388,11 +383,11 @@ $('cYes').onclick=async()=>{
     const p=await api.checkin(selected.id);
     $('confirm').classList.add('hide');
     if(!p){await refresh();b.disabled=false;return} // sudah ditanda oleh orang lain
-    saveMe(p.id);showPass(p);await refresh();boom(260);window.scrollTo({top:0,behavior:'smooth'});
+    showPass(p);await refresh();boom(260);window.scrollTo({top:0,behavior:'smooth'});
   }catch(e){
     $('confirm').classList.add('hide');
     const pe=$('pickErr');pe.classList.remove('hide');
-    pe.textContent=(e&&e.code==='peranti_sudah_digunakan')?'🚫 Peranti ini sudah digunakan untuk tanda hadir. Setiap telefon hanya boleh tanda hadir SEKALI. Jika tersilap nama, minta AJK reset.':'Gagal tanda hadir. Semak internet dan cuba lagi.';
+    pe.textContent='Gagal tanda hadir. Semak internet dan cuba lagi.';
     window.scrollTo({top:0,behavior:'smooth'});
   }
   b.disabled=false;
@@ -578,6 +573,7 @@ $('sGateGo').onclick=async()=>{
   if(await api.adminOk(c)){ADMIN=c;$('sGateErr').textContent='';screenAuth=true;try{sessionStorage.setItem('gala26_scr','1')}catch(e){}route()}
   else $('sGateErr').textContent='Kod AJK salah.';
 };
+$('again').onclick=()=>{$('pass').classList.add('hide');$('pickErr').classList.add('hide');$('q').value='';render()};
 $('sGateIn').addEventListener('keydown',e=>{if(e.key==='Enter')$('sGateGo').click()});
 addEventListener('hashchange',route);
 setInterval(()=>{if(document.body.classList.contains('screenmode')&&screenAuth)refresh()},3000);
