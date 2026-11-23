@@ -174,6 +174,7 @@ canvas#fx{z-index:70}
   <section class="card hide" id="pick">
     <h2>CARI NAMA ANDA ✨</h2>
     <p>Taip sebahagian nama, kemudian tekan nama anda untuk tanda hadir.</p>
+    <div class="warn big hide" id="pickErr"></div>
     <input id="q" type="text" name="x-cari" placeholder="Cari nama…" autocomplete="off" autocorrect="off" spellcheck="false" data-lpignore="true" data-1p-ignore data-form-type="other">
     <div class="list" id="list"></div>
   </section>
@@ -269,7 +270,7 @@ canvas#fx{z-index:70}
 const CONFIG = {
   APPLAUSE_URL: '',               // pilihan: fail rakaman tepukan sebenar, cth 'tepukan.mp3' (letak sebelah fail ini)
   VENUE_CODE: 'GALA26',          // kod yang dipaparkan di skrin dalam dewan
-  ADMIN_CODE: 'mgdp26',          // kod untuk urus senarai
+  ADMIN_CODE: '',          // kod untuk urus senarai
   EVENT_START: '2026-11-26T00:00:00+08:00',
   SUPABASE_URL: 'https://pqydwortuesdwaklnyeg.supabase.co',               // cth: https://xxxx.supabase.co  (kosong = mod ujian setempat)
   SUPABASE_KEY: 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InBxeWR3b3J0dWVzZHdha2xueWVnIiwicm9sZSI6ImFub24iLCJpYXQiOjE3OTQyNzYzNjksImV4cCI6MjEwOTg1MjM2OX0.lFobWI0K2HfIaXkgfzN9xUhys94-21ybv19kS3tAgG8'                // anon / publishable key
@@ -280,18 +281,34 @@ const $=id=>document.getElementById(id);
 const REMOTE = !!(CONFIG.SUPABASE_URL && CONFIG.SUPABASE_KEY);
 const uid=()=>Math.random().toString(36).slice(2,10);
 const LS='gala26_tetamu';
+function deviceId(){ // ID peranti disimpan dalam localStorage + cookie
+  let id=null;
+  try{id=localStorage.getItem('gala26_dev')}catch(e){}
+  if(!id){const m=document.cookie.match(/(?:^|; )gala26_dev=([^;]+)/);if(m)id=m[1]}
+  if(!id)id=(window.crypto&&crypto.randomUUID?crypto.randomUUID():uid()+uid()+uid()+uid()).replace(/-/g,'');
+  try{localStorage.setItem('gala26_dev',id)}catch(e){}
+  try{document.cookie='gala26_dev='+id+'; max-age=31536000; path=/; SameSite=Lax'}catch(e){}
+  return id;
+}
+let ADMIN='';
 const api = REMOTE ? {
   h:{apikey:CONFIG.SUPABASE_KEY,Authorization:'Bearer '+CONFIG.SUPABASE_KEY,'Content-Type':'application/json'},
-  u:p=>CONFIG.SUPABASE_URL.replace(/\/$/,'')+'/rest/v1/gala_tetamu'+p,
-  async list(){const r=await fetch(this.u('?select=*&order=nama.asc'),{headers:this.h});if(!r.ok)throw 0;return r.json()},
-  async add(rows){const r=await fetch(this.u(''),{method:'POST',headers:this.h,body:JSON.stringify(rows)});if(!r.ok)throw 0},
-  async del(id){await fetch(this.u('?id=eq.'+encodeURIComponent(id)),{method:'DELETE',headers:this.h})},
-  async reset(id){await fetch(this.u('?id=eq.'+encodeURIComponent(id)),{method:'PATCH',headers:this.h,body:JSON.stringify({hadir_at:null,no:null})})},
-  async checkin(id){ // hanya jika belum hadir
-    const at=new Date().toISOString();
-    const all=await this.list(); const no=all.filter(x=>x.hadir_at).length+1;
-    const r=await fetch(this.u('?id=eq.'+encodeURIComponent(id)+'&hadir_at=is.null'),{method:'PATCH',headers:{...this.h,Prefer:'return=representation'},body:JSON.stringify({hadir_at:at,no})});
-    const j=await r.json(); return j[0]||null;
+  base:()=>CONFIG.SUPABASE_URL.replace(/\/$/,'')+'/rest/v1/',
+  async rpc(fn,args){
+    const r=await fetch(this.base()+'rpc/'+fn,{method:'POST',headers:this.h,body:JSON.stringify(args)});
+    let j=null;try{j=await r.json()}catch(e){}
+    if(!r.ok){const m=(j&&j.message)||'ralat';const e=new Error(m);e.code=m;throw e}
+    return j;
+  },
+  async list(){const r=await fetch(this.base()+'gala_tetamu?select=id,nama,jawatan,hadir_at,no&order=nama.asc',{headers:this.h});if(!r.ok)throw 0;return r.json()},
+  async adminOk(code){try{return (await this.rpc('gala_admin_ok',{p_code:code}))===true}catch(e){return false}},
+  async add(rows){return this.rpc('gala_admin_add',{p_code:ADMIN,p_rows:rows})},
+  async del(id){await this.rpc('gala_admin_del',{p_code:ADMIN,p_id:id})},
+  async reset(id){await this.rpc('gala_admin_reset',{p_code:ADMIN,p_id:id})},
+  async adminCheckin(id){await this.rpc('gala_admin_checkin',{p_code:ADMIN,p_id:id})},
+  async checkin(id){ // satu peranti satu kehadiran; disahkan di pelayan
+    try{const j=await this.rpc('gala_checkin',{p_id:id,p_device:deviceId()});return Array.isArray(j)?j[0]:j}
+    catch(e){if(e.code==='sudah_hadir')return null;throw e}
   }
 } : {
   read(){try{return JSON.parse(localStorage.getItem(LS))}catch(e){return null}},
@@ -300,6 +317,8 @@ const api = REMOTE ? {
   async add(rows){const a=await this.list();rows.forEach(r=>a.push({id:uid(),...r,hadir_at:null,no:null}));this.write(a)},
   async del(id){this.write((await this.list()).filter(x=>x.id!==id))},
   async reset(id){this.write((await this.list()).map(x=>x.id===id?{...x,hadir_at:null,no:null}:x))},
+  async adminOk(code){return !!CONFIG.ADMIN_CODE&&code.trim().toLowerCase()===CONFIG.ADMIN_CODE.toLowerCase()},
+  async adminCheckin(id){return this.checkin(id)},
   async checkin(id){const a=await this.list();const p=a.find(x=>x.id===id);if(!p||p.hadir_at)return null;p.hadir_at=new Date().toISOString();p.no=a.filter(x=>x.hadir_at).length;this.write(a);return p}
 };
 let DATA=[], unlocked=false, selected=null, loaded=false, connErr=false;
@@ -370,14 +389,20 @@ $('cYes').onclick=async()=>{
     $('confirm').classList.add('hide');
     if(!p){await refresh();b.disabled=false;return} // sudah ditanda oleh orang lain
     saveMe(p.id);showPass(p);await refresh();boom(260);window.scrollTo({top:0,behavior:'smooth'});
-  }catch(e){$('confirm').classList.add('hide')}
+  }catch(e){
+    $('confirm').classList.add('hide');
+    const pe=$('pickErr');pe.classList.remove('hide');
+    pe.textContent=(e&&e.code==='peranti_sudah_digunakan')?'🚫 Peranti ini sudah digunakan untuk tanda hadir. Setiap telefon hanya boleh tanda hadir SEKALI. Jika tersilap nama, minta AJK reset.':'Gagal tanda hadir. Semak internet dan cuba lagi.';
+    window.scrollTo({top:0,behavior:'smooth'});
+  }
   b.disabled=false;
 };
 /* admin */
 $('admLink').onclick=()=>$('admin').classList.remove('hide');
 document.querySelectorAll('[data-close]').forEach(b=>b.onclick=()=>$(b.dataset.close).classList.add('hide'));
-$('admGo').onclick=()=>{
-  if($('admIn').value.trim().toLowerCase()===CONFIG.ADMIN_CODE.toLowerCase()){$('admLogin').classList.add('hide');$('admPanel').classList.remove('hide');renderAdmin()}
+$('admGo').onclick=async()=>{
+  const c=$('admIn').value;$('admErr').textContent='Menyemak…';
+  if(await api.adminOk(c)){ADMIN=c;$('admErr').textContent='';$('admLogin').classList.add('hide');$('admPanel').classList.remove('hide');renderAdmin()}
   else $('admErr').textContent='Kod AJK salah.';
 };
 function renderAdmin(){
@@ -388,9 +413,9 @@ function renderAdmin(){
     const t=document.createElement('div');t.className='t';t.textContent=x.nama;
     const i=document.createElement('i');i.textContent=(x.jawatan?x.jawatan+' • ':'')+(x.hadir_at?'HADIR '+fmtT(x.hadir_at):'belum hadir');t.appendChild(i);
     r.appendChild(t);
-    if(x.hadir_at){const b=document.createElement('button');b.className='x';b.textContent='Reset';b.onclick=async()=>{await api.reset(x.id);refresh()};r.appendChild(b)}
-    else{const b=document.createElement('button');b.className='x';b.textContent='Tanda hadir';b.onclick=async()=>{await api.checkin(x.id);refresh()};r.appendChild(b)}
-    const d=document.createElement('button');d.className='x';d.textContent='Buang';d.onclick=async()=>{if(d.dataset.s){await api.del(x.id);refresh()}else{d.dataset.s=1;d.textContent='Sahkan?'}};r.appendChild(d);
+    if(x.hadir_at){const b=document.createElement('button');b.className='x';b.textContent='Reset';b.onclick=async()=>{try{await api.reset(x.id)}catch(e){}refresh()};r.appendChild(b)}
+    else{const b=document.createElement('button');b.className='x';b.textContent='Tanda hadir';b.onclick=async()=>{try{await api.adminCheckin(x.id)}catch(e){}refresh()};r.appendChild(b)}
+    const d=document.createElement('button');d.className='x';d.textContent='Buang';d.onclick=async()=>{if(d.dataset.s){try{await api.del(x.id)}catch(e){}refresh()}else{d.dataset.s=1;d.textContent='Sahkan?'}};r.appendChild(d);
     box.appendChild(r);
   });
 }
@@ -403,7 +428,7 @@ $('addBtn').onclick=async()=>{
     const k=nama.toLowerCase().replace(/\s+/g,' ');
     if(have.has(k)){skip++;return}have.add(k);rows.push({nama,jawatan});
   });
-  if(rows.length)await api.add(rows);
+  try{if(rows.length)await api.add(rows)}catch(e){$('addMsg').textContent='Gagal menambah nama.';return}
   $('addTxt').value='';$('addMsg').textContent=rows.length+' nama ditambah'+(skip?(' • '+skip+' duplikasi dilangkau'):'');
   refresh();
 };
@@ -548,8 +573,9 @@ function route(){
   $('sGate').classList.toggle('hide',screenAuth);$('sLive').classList.toggle('hide',!screenAuth);
   if(screenAuth){idleScreen();refresh()}
 }
-$('sGateGo').onclick=()=>{
-  if($('sGateIn').value.trim().toLowerCase()===CONFIG.ADMIN_CODE.toLowerCase()){screenAuth=true;try{sessionStorage.setItem('gala26_scr','1')}catch(e){}route()}
+$('sGateGo').onclick=async()=>{
+  const c=$('sGateIn').value;$('sGateErr').textContent='Menyemak…';
+  if(await api.adminOk(c)){ADMIN=c;$('sGateErr').textContent='';screenAuth=true;try{sessionStorage.setItem('gala26_scr','1')}catch(e){}route()}
   else $('sGateErr').textContent='Kod AJK salah.';
 };
 $('sGateIn').addEventListener('keydown',e=>{if(e.key==='Enter')$('sGateGo').click()});
