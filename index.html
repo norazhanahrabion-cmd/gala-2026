@@ -131,12 +131,14 @@ canvas#fx{z-index:70}
 
 .sBody{flex:1;display:flex;align-items:center;gap:2.5vw;min-height:0}
 .sBody .sMid{flex:1;min-width:0}
-.sQR{flex:none;width:clamp(170px,23vw,400px);border:2px solid var(--gold);border-radius:22px;background:rgba(0,0,0,.6);padding:1.4vh 1vw;text-align:center;box-shadow:0 0 40px rgba(246,196,83,.35)}
-.sQR svg{display:block;width:100%;height:auto;border-radius:12px}
+.sQR{flex:none;width:auto;max-width:21vw;border:2px solid var(--gold);border-radius:22px;background:rgba(0,0,0,.6);padding:1.4vh 1vw;text-align:center;box-shadow:0 0 40px rgba(246,196,83,.35)}
+.sQR svg{display:block;margin:0 auto;height:min(26vh,15vw);width:auto;aspect-ratio:1;border-radius:12px}
 .sQR b{display:block;margin-top:1vh;font-family:'Bebas Neue';font-weight:400;letter-spacing:.14em;font-size:clamp(16px,2vw,34px);color:var(--gold)}
 .sQR small{display:block;margin-top:.4vh;font-size:clamp(10px,1.1vw,18px);line-height:1.4;color:#e4d9bd}
 .sQR u{display:block;margin-top:.6vh;font-size:clamp(11px,1.2vw,20px);color:var(--gold2);text-decoration:none;letter-spacing:.04em}
-@media (max-width:800px){.sBody{flex-direction:column;justify-content:center}.sQR{width:min(46vw,220px)}}
+@media (max-width:800px){.sBody{flex-direction:column;justify-content:center}.sQR{max-width:60vw}.sQR svg{height:min(24vh,38vw)}}
+@media (max-height:600px){.sQR small,.sQR u{display:none}}
+.sBody{overflow:hidden}
 </style>
 </head>
 <body>
