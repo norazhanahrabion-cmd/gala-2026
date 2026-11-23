@@ -361,7 +361,7 @@ $('cYes').onclick=async()=>{
 $('admLink').onclick=()=>$('admin').classList.remove('hide');
 document.querySelectorAll('[data-close]').forEach(b=>b.onclick=()=>$(b.dataset.close).classList.add('hide'));
 $('admGo').onclick=()=>{
-  if($('admIn').value===CONFIG.ADMIN_CODE){$('admLogin').classList.add('hide');$('admPanel').classList.remove('hide');renderAdmin()}
+  if($('admIn').value.trim().toLowerCase()===CONFIG.ADMIN_CODE.toLowerCase()){$('admLogin').classList.add('hide');$('admPanel').classList.remove('hide');renderAdmin()}
   else $('admErr').textContent='Kod AJK salah.';
 };
 function renderAdmin(){
@@ -532,7 +532,7 @@ function route(){
   if(screenAuth){idleScreen();refresh()}
 }
 $('sGateGo').onclick=()=>{
-  if($('sGateIn').value===CONFIG.ADMIN_CODE){screenAuth=true;try{sessionStorage.setItem('gala26_scr','1')}catch(e){}route()}
+  if($('sGateIn').value.trim().toLowerCase()===CONFIG.ADMIN_CODE.toLowerCase()){screenAuth=true;try{sessionStorage.setItem('gala26_scr','1')}catch(e){}route()}
   else $('sGateErr').textContent='Kod AJK salah.';
 };
 $('sGateIn').addEventListener('keydown',e=>{if(e.key==='Enter')$('sGateGo').click()});
